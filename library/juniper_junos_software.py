@@ -380,6 +380,7 @@ except ImportError:
 
 # From Ansible 2.1, Ansible uses Ansiballz for assembling modules
 # Ansiballz packages module_utils into ansible.module_utils
+from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils import juniper_junos_common
 
 def parse_version_from_filename(filename):

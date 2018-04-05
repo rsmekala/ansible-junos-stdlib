@@ -37,10 +37,15 @@ from __future__ import absolute_import, division, print_function
 import os.path
 import sys
 
-# From Ansible 2.1, Ansible uses Ansiballz for assembling modules
-# Ansiballz packages module_utils into ansible.module_utils
-from ansible.module_utils import juniper_junos_common
-
+# The module_utils path must be added to sys.path in order to import
+# juniper_junos_common. The module_utils path is relative to the path of this
+# file.
+module_utils_path = os.path.normpath(os.path.dirname(__file__) +
+                                     '/../module_utils')
+if module_utils_path is not None:
+    sys.path.insert(0, module_utils_path)
+    import juniper_junos_common
+    del sys.path[0]
 
 # Use the custom behavior of JuniperJunosActionModule as the superclass of
 # our ActionModule.
