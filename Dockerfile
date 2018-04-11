@@ -29,7 +29,7 @@ RUN tar -czf Juniper.junos ansible-junos-stdlib &&\
     pip install jxmlease &&\
     pip install ansible==$ver_ansible &&\
     pip install jsnapy==$ver_jsnapy &&\
-    pip install git+https://github.com/sivel/ansible-testing.git
+    pip install git+https://github.com/sivel/ansible-testing.git &&\
     ansible-galaxy install --roles-path=/etc/ansible/roles Juniper.junos &&\
     apk del -r --purge gcc make g++ &&\
     rm -rf /source/* &&\
