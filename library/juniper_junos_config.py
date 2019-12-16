@@ -698,10 +698,12 @@ config_parsed:
 diff:
   description: 
     - The configuration differences between the previous and new
-      configurations. The value is a single multi-line string in "diff" format.
+      configurations. The value is a dict that contains a single key named
+      "prepared". Value associated with that key is a single multi-line string
+      in "diff" format.
   returned: when I(load)  or I(rollback) is specified, I(diff) is C(true), and
             I(return_output) is C(true).
-  type: str
+  type: dict
 diff_lines:
   description:
     - The configuration differences between the previous and new
@@ -748,6 +750,7 @@ def main():
         juniper_junos_common.CONFIG_DATABASE_CHOICES
     config_action_choices = [None] + juniper_junos_common.CONFIG_ACTION_CHOICES
     config_mode_choices = juniper_junos_common.CONFIG_MODE_CHOICES
+    config_model_choices = juniper_junos_common.CONFIG_MODEL_CHOICES
 
     # Create the module instance.
     junos_module = juniper_junos_common.JuniperJunosModule(
@@ -790,6 +793,16 @@ def main():
                         type='str',
                         required=False,
                         default=None),
+            model=dict(required=False,
+                       choices=config_model_choices,
+                        type='str',
+                        default=None),
+            remove_ns=dict(required=False,
+                            type='bool',
+                            default=None),
+            namespace=dict(required=False,
+                            type='str',
+                            default=None),
             check=dict(required=False,
                        type='bool',
                        aliases=['check_commit', 'commit_check'],
@@ -885,6 +898,10 @@ def main():
     confirmed = junos_module.params.get('confirmed')
     comment = junos_module.params.get('comment')
     check_commit_wait = junos_module.params.get('check_commit_wait')
+    model = junos_module.params.get('model')
+    remove_ns = junos_module.params.get('remove_ns')
+    namespace = junos_module.params.get('namespace')
+
 
     # If retrieve is set and load and rollback are not set, then
     # check, diff, and commit default to False.
@@ -1001,7 +1018,7 @@ def main():
 
     junos_module.logger.debug("Step 1 - Open a candidate configuration "
                               "database.")
-    junos_module.open_configuration(mode=config_mode)
+    junos_module.open_configuration(mode=config_mode, ignore_warning=ignore_warning)
     results['msg'] += 'opened'
 
     junos_module.logger.debug("Step 2 - Load configuration data into the "
@@ -1054,12 +1071,12 @@ def main():
     junos_module.logger.debug("Step 4 - Determine differences between the "
                               "candidate and committed configuration "
                               "databases.")
-    if diff is True:
+    if diff is True or junos_module._diff:
         diff = junos_module.diff_configuration()
         if diff is not None:
             results['changed'] = True
-            if return_output is True:
-                results['diff'] = diff
+            if return_output is True or junos_module._diff:
+                results['diff'] = {'prepared': diff}
                 results['diff_lines'] = diff.splitlines()
             # Save the diff output
             junos_module.save_text_output('diff', 'diff', diff)
@@ -1076,7 +1093,10 @@ def main():
                                       database=retrieve,
                                       format=format,
                                       options=options,
-                                      filter=filter)
+                                      filter=filter,
+                                      model=model,
+                                      namespace=namespace,
+                                      remove_ns=remove_ns)
         if return_output is True:
             if config is not None:
                 results['config'] = config
